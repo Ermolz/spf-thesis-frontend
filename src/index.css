@@ -1,0 +1,174 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg-body: #050814;
+    --bg-elevated: #0B1020;
+    --bg-card: #0F172A;
+    --bg-card-hover: #111827;
+    --primary: #3B82F6;
+    --primary-soft: #1D4ED8;
+    --primary-subtle: #1E293B;
+    --accent: #8B5CF6;
+    --accent-soft: #4C1D95;
+    --success: #22C55E;
+    --success-soft: rgba(34, 197, 94, 0.12);
+    --warning: #FACC15;
+    --warning-soft: rgba(250, 204, 21, 0.12);
+    --text-main: #E5E7EB;
+    --text-muted: #9CA3AF;
+    --text-soft: #6B7280;
+    --text-on-primary: #FFFFFF;
+    --border-subtle: #1F2937;
+    --border-strong: #374151;
+    --shadow-soft: 0 18px 40px rgba(15, 23, 42, 0.9);
+    --gradient-header: linear-gradient(90deg, #0EA5E9 0%, #6366F1 50%, #8B5CF6 100%);
+    --gradient-primary: linear-gradient(135deg, #2563EB 0%, #6366F1 40%, #8B5CF6 100%);
+    --radius-lg: 18px;
+    --radius-pill: 999px;
+  }
+
+  body {
+    @apply bg-bg-body text-text-main;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+  }
+
+  h1 {
+    @apply text-3xl sm:text-4xl lg:text-5xl;
+  }
+
+  h2 {
+    @apply text-2xl sm:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl sm:text-2xl;
+  }
+}
+
+@layer components {
+  .project-card {
+    @apply transition-all duration-300 ease-out;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  .project-card:hover {
+    @apply -translate-y-2;
+    border-color: var(--primary);
+    background-color: var(--bg-card-hover);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(59, 130, 246, 0.2);
+    transform: translateY(-8px) scale(1.01);
+  }
+
+  .button-primary {
+    @apply transition-all duration-200 ease-out;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+  }
+
+  .button-primary:hover {
+    @apply -translate-y-0.5;
+    box-shadow: 0 10px 25px -3px rgba(59, 130, 246, 0.4), 0 4px 6px -2px rgba(59, 130, 246, 0.2);
+    transform: translateY(-2px);
+  }
+
+  .button-primary:active {
+    @apply translate-y-0;
+    box-shadow: 0 2px 4px -1px rgba(59, 130, 246, 0.2);
+  }
+
+  .search-input {
+    @apply transition-all duration-200 ease-out;
+    backdrop-filter: blur(10px);
+  }
+
+  .search-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1), 0 0 0 1px rgba(59, 130, 246, 0.5);
+    background-color: rgba(15, 23, 42, 0.8);
+  }
+
+  .badge-open {
+    animation: pulse 2.5s ease-out infinite;
+    box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+  }
+
+  .card-elevated {
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-elevated:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+  }
+
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+    }
+    70% {
+      box-shadow: 0 0 0 8px rgba(34, 197, 94, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(34, 197, 94, 0);
+    }
+  }
+
+  @keyframes dropdown {
+    0% {
+      opacity: 0;
+      transform: scaleY(0.95) translateY(-4px);
+    }
+    100% {
+      opacity: 1;
+      transform: scaleY(1) translateY(0);
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -200% center;
+    }
+    100% {
+      background-position: 200% center;
+    }
+  }
+
+  [data-hot-toast-id] {
+    cursor: grab;
+    user-select: none;
+    touch-action: pan-y;
+  }
+
+  [data-hot-toast-id]:active {
+    cursor: grabbing;
+  }
+
+  [data-hot-toast-id]:hover {
+    cursor: grab;
+  }
+}
