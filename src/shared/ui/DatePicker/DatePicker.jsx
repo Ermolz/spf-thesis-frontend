@@ -33,8 +33,10 @@ export const DatePicker = ({
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(value || '');
   const [selectedTime, setSelectedTime] = useState(value ? new Date(value).toTimeString().slice(0, 5) : '');
+  const [positionAbove, setPositionAbove] = useState(false);
   const containerRef = useRef(null);
   const inputRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   useEffect(() => {
     if (value) {
@@ -110,7 +112,25 @@ export const DatePicker = ({
         setDisplayMonth(date.getMonth());
       }
     }
-    setIsOpen(!isOpen);
+    const newIsOpen = !isOpen;
+    setIsOpen(newIsOpen);
+    
+    if (newIsOpen && inputRef.current) {
+      setTimeout(() => {
+        if (inputRef.current && dropdownRef.current) {
+          const inputRect = inputRef.current.getBoundingClientRect();
+          const dropdownHeight = dropdownRef.current.offsetHeight || 400;
+          const spaceBelow = window.innerHeight - inputRect.bottom;
+          const spaceAbove = inputRect.top;
+          
+          if (spaceBelow < dropdownHeight && spaceAbove > dropdownHeight) {
+            setPositionAbove(true);
+          } else {
+            setPositionAbove(false);
+          }
+        }
+      }, 0);
+    }
   };
 
   const today = new Date().toISOString().split('T')[0];
@@ -169,7 +189,7 @@ export const DatePicker = ({
   };
 
   const handleDayClick = (day) => {
-    if (day === null) return;
+    if (day === null || isDisabled(day)) return;
     const dateStr = `${displayYear}-${String(displayMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     handleDateChange(dateStr);
   };
@@ -184,6 +204,15 @@ export const DatePicker = ({
     if (day === null) return false;
     const dateStr = `${displayYear}-${String(displayMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     return dateStr === today;
+  };
+
+  const isDisabled = (day) => {
+    if (day === null) return true;
+    const dateStr = `${displayYear}-${String(displayMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    if (min) {
+      return dateStr < min;
+    }
+    return dateStr < today;
   };
 
   return (
@@ -219,7 +248,13 @@ export const DatePicker = ({
         </div>
 
         {isOpen && (
-          <div className="absolute z-50 mt-2 w-full sm:w-auto min-w-[320px] bg-bg-card border border-border-subtle rounded-[12px] shadow-lg p-4 animate-[dropdown_0.2s_ease-out] backdrop-blur-sm card-elevated">
+          <div 
+            ref={dropdownRef}
+            className={cn(
+              'absolute z-50 w-full sm:w-auto min-w-[320px] bg-bg-card border border-border-subtle rounded-[12px] shadow-lg p-4 animate-[dropdown_0.2s_ease-out] backdrop-blur-sm card-elevated',
+              positionAbove ? 'bottom-full mb-2' : 'top-full mt-2'
+            )}
+          >
             <div className="space-y-4">
               <div className="flex items-center justify-between mb-4">
                 <button
@@ -262,14 +297,16 @@ export const DatePicker = ({
                     key={index}
                     type="button"
                     onClick={() => handleDayClick(day)}
-                    disabled={day === null}
+                    disabled={day === null || isDisabled(day)}
                     className={cn(
                       'h-9 w-9 rounded-lg text-sm font-medium transition-all duration-200',
                       day === null && 'cursor-default',
-                      day !== null && 'hover:bg-primary-subtle hover:text-primary',
+                      (day === null || isDisabled(day)) && 'opacity-50 cursor-not-allowed',
+                      day !== null && !isDisabled(day) && 'hover:bg-primary-subtle hover:text-primary',
                       isSelectedDay(day) && 'bg-primary text-text-on-primary',
-                      isToday(day) && !isSelectedDay(day) && 'bg-primary-subtle text-primary font-bold',
-                      !isSelectedDay(day) && !isToday(day) && day !== null && 'text-text-main'
+                      isToday(day) && !isSelectedDay(day) && !isDisabled(day) && 'bg-primary-subtle text-primary font-bold',
+                      !isSelectedDay(day) && !isToday(day) && day !== null && !isDisabled(day) && 'text-text-main',
+                      isDisabled(day) && day !== null && 'text-text-soft'
                     )}
                   >
                     {day}

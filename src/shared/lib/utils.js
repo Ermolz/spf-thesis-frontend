@@ -6,7 +6,7 @@ export function cn(...inputs) {
 }
 
 export function formatDate(date) {
-  return new Date(date).toLocaleDateString('ru-RU', {
+  return new Date(date).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -14,7 +14,7 @@ export function formatDate(date) {
 }
 
 export function formatDateTime(date) {
-  return new Date(date).toLocaleString('ru-RU', {
+  return new Date(date).toLocaleString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -24,7 +24,7 @@ export function formatDateTime(date) {
 }
 
 export function formatCurrency(amount) {
-  return new Intl.NumberFormat('ru-RU', {
+  return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
   }).format(amount);

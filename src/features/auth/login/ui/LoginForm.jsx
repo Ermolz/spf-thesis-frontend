@@ -40,7 +40,15 @@ export const LoginForm = () => {
       toast.success('Login successful!');
       navigate('/');
     } catch (err) {
-      const errorMessage = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || 'Login error';
+      const errorCode = err.response?.data?.errors?.[0]?.code;
+      let errorMessage = 'Login error';
+      
+      if (errorCode === 'AUTH_INVALID_CREDENTIALS') {
+        errorMessage = 'Неправильний email або пароль';
+      } else {
+        errorMessage = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || 'Login error';
+      }
+      
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);

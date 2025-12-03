@@ -10,11 +10,13 @@ export const ProjectsListPage = () => {
   const [projects, setProjects] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filters, setFilters] = useState({
-    status: 'OPEN',
+    status: null,
     categoryId: null,
     minBudget: null,
     maxBudget: null,
     tagIds: [],
+    minDeadline: null,
+    maxDeadline: null,
   });
 
   const loadProjects = async (currentFilters) => {
@@ -27,8 +29,6 @@ export const ProjectsListPage = () => {
       
       if (currentFilters.status) {
         params.status = currentFilters.status;
-      } else {
-        params.status = 'OPEN';
       }
       if (currentFilters.categoryId) {
         params.categoryId = currentFilters.categoryId;
@@ -41,6 +41,12 @@ export const ProjectsListPage = () => {
       }
       if (currentFilters.tagIds && Array.isArray(currentFilters.tagIds) && currentFilters.tagIds.length > 0) {
         params.tagIds = currentFilters.tagIds;
+      }
+      if (currentFilters.minDeadline) {
+        params.minDeadline = currentFilters.minDeadline;
+      }
+      if (currentFilters.maxDeadline) {
+        params.maxDeadline = currentFilters.maxDeadline;
       }
       
       const response = await projectApi.search(params);
@@ -69,7 +75,7 @@ export const ProjectsListPage = () => {
 
   useEffect(() => {
     loadProjects(filters);
-  }, [filters.status, filters.categoryId, filters.minBudget, filters.maxBudget, filters.tagIds?.length]);
+  }, [filters.status, filters.categoryId, filters.minBudget, filters.maxBudget, filters.tagIds?.length, filters.minDeadline, filters.maxDeadline]);
 
   const handleSearch = (newFilters) => {
     setFilters(newFilters);

@@ -13,6 +13,7 @@ import { ChatPage } from '@pages/chat/ui/ChatPage';
 import { ProfilePage } from '@pages/profile/ui/ProfilePage';
 import { PaymentsPage } from '@pages/payments/ui/PaymentsPage';
 import { ReviewsPage } from '@pages/reviews/ui/ReviewsPage';
+import { FreelancerProfilePage } from '@pages/freelancers/detail/ui/FreelancerProfilePage';
 import { ROLES } from '@shared/config/constants';
 
 export const AppRoutes = () => {
@@ -48,7 +49,7 @@ export const AppRoutes = () => {
       <Route
         path="/proposals"
         element={
-          <PrivateRoute>
+          <PrivateRoute role={ROLES.FREELANCER}>
             <ProposalsPage />
           </PrivateRoute>
         }
@@ -98,6 +99,14 @@ export const AppRoutes = () => {
         element={
           <PrivateRoute>
             <ReviewsPage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/freelancers/:userId"
+        element={
+          <PrivateRoute>
+            <FreelancerProfilePage />
           </PrivateRoute>
         }
       />

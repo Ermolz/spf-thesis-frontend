@@ -6,6 +6,8 @@ import { Button } from '@shared/ui/Button';
 import { Input } from '@shared/ui/Input';
 import { reviewApi } from '@entities/review/api/reviewApi';
 import { toast } from '@shared/lib/toast';
+import { useAuthStore } from '@entities/user/model/store';
+import { ROLES } from '@shared/config/constants';
 
 const createReviewSchema = z.object({
   rating: z.number().min(1, 'Rating is required').max(5, 'Rating must be between 1 and 5'),
@@ -13,6 +15,7 @@ const createReviewSchema = z.object({
 });
 
 export const CreateReviewForm = ({ assignmentId, onSuccess }) => {
+  const { user } = useAuthStore();
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -30,9 +33,13 @@ export const CreateReviewForm = ({ assignmentId, onSuccess }) => {
   const onSubmit = async (data) => {
     try {
       setIsLoading(true);
+      const reviewType = user?.role === ROLES.CLIENT 
+        ? 'CLIENT_TO_FREELANCER' 
+        : 'FREELANCER_TO_CLIENT';
       const payload = {
         assignmentId: Number(assignmentId),
         rating: data.rating,
+        reviewType: reviewType,
         ...(data.comment && { comment: data.comment }),
       };
       await reviewApi.create(payload);

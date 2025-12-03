@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Header } from '@widgets/header';
 import { Card, CardHeader, CardTitle, CardContent } from '@shared/ui/Card';
 import { Loading } from '@shared/ui/Loading';
 import { Modal } from '@shared/ui/Modal';
 import { Button } from '@shared/ui/Button';
 import { useAuthStore } from '@entities/user/model/store';
-import { profileApi } from '@entities/user/api/userApi';
+import { profileApi, fileApi } from '@entities/user/api/userApi';
 import { ROLES } from '@shared/config/constants';
 import { toast } from '@shared/lib/toast';
 import { formatDate } from '@shared/lib/utils';
@@ -19,6 +19,8 @@ export const ProfilePage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isUploadingPortfolio, setIsUploadingPortfolio] = useState(false);
+  const fileInputRef = useRef(null);
 
   const loadProfile = async (userToLoad = user) => {
     try {
@@ -221,6 +223,81 @@ export const ProfilePage = () => {
                           <p className="text-2xl font-bold text-primary">{profile.completedProjectsCount}</p>
                         </div>
                       )}
+                      <div className="p-4 rounded-xl bg-bg-elevated border border-border-subtle">
+                        <label className="text-xs font-semibold text-text-muted uppercase tracking-wide block mb-2">
+                          Portfolio
+                        </label>
+                        {profile.portfolioFilePath ? (
+                          <div className="flex items-center gap-3">
+                            <a
+                              href={`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/files/portfolios/${profile.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary hover:text-primary-soft transition-colors flex items-center gap-2"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                              </svg>
+                              View Portfolio PDF
+                            </a>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => fileInputRef.current?.click()}
+                              isLoading={isUploadingPortfolio}
+                            >
+                              Replace
+                            </Button>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-sm text-text-soft mb-2">No portfolio uploaded yet</p>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => fileInputRef.current?.click()}
+                              isLoading={isUploadingPortfolio}
+                            >
+                              Upload Portfolio (PDF)
+                            </Button>
+                          </div>
+                        )}
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".pdf"
+                          className="hidden"
+                          onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            
+                            if (file.type !== 'application/pdf') {
+                              toast.error('Only PDF files are allowed');
+                              return;
+                            }
+                            
+                            if (file.size > 10 * 1024 * 1024) {
+                              toast.error('File size exceeds 10MB limit');
+                              return;
+                            }
+                            
+                            try {
+                              setIsUploadingPortfolio(true);
+                              await profileApi.uploadPortfolio(file);
+                              toast.success('Portfolio uploaded successfully');
+                              loadProfile();
+                            } catch (err) {
+                              const errorMessage = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || 'Error uploading portfolio';
+                              toast.error(errorMessage);
+                            } finally {
+                              setIsUploadingPortfolio(false);
+                              if (fileInputRef.current) {
+                                fileInputRef.current.value = '';
+                              }
+                            }
+                          }}
+                        />
+                      </div>
                     </>
                   )}
 

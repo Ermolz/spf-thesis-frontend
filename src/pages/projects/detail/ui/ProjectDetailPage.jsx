@@ -6,9 +6,11 @@ import { Button } from '@shared/ui/Button';
 import { CreateProposalForm } from '@features/proposal/create-proposal';
 import { UpdateProjectForm } from '@features/project/update-project';
 import { ProposalList } from '@widgets/proposal-list';
+import { CreateReviewForm } from '@features/review/create-review';
 import { projectApi } from '@entities/project/api/projectApi';
 import { proposalApi } from '@entities/proposal/api/proposalApi';
 import { assignmentApi } from '@entities/assignment/api/assignmentApi';
+import { reviewApi } from '@entities/review/api/reviewApi';
 import { Loading } from '@shared/ui/Loading';
 import { Modal } from '@shared/ui/Modal';
 import { formatCurrency, formatDate } from '@shared/lib/utils';
@@ -22,19 +24,51 @@ export const ProjectDetailPage = () => {
   const { user } = useAuthStore();
   const [project, setProject] = useState(null);
   const [proposals, setProposals] = useState([]);
+  const [assignment, setAssignment] = useState(null);
+  const [existingReviews, setExistingReviews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProposalModalOpen, setIsProposalModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
+  const [isCompleteProjectModalOpen, setIsCompleteProjectModalOpen] = useState(false);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isLoadingAction, setIsLoadingAction] = useState(false);
 
   useEffect(() => {
     loadProject();
-    if (user?.role === ROLES.CLIENT) {
+  }, [id, user]);
+
+  useEffect(() => {
+
+    if (user?.role === ROLES.CLIENT && project) {
       loadProposals();
     }
-  }, [id, user]);
+    
+    if (project && (project.status === 'IN_PROGRESS' || project.status === 'COMPLETED')) {
+      loadAssignment();
+    }
+  }, [project, user]);
+
+  const loadAssignment = async () => {
+    try {
+      const data = await assignmentApi.getByProjectId(Number(id));
+      setAssignment(data);
+      
+      if (data?.id) {
+        try {
+          const reviewsData = await reviewApi.getByAssignment(data.id);
+          const reviews = reviewsData?.content || reviewsData || [];
+          setExistingReviews(Array.isArray(reviews) ? reviews : []);
+        } catch (err) {
+          setExistingReviews([]);
+        }
+      }
+    } catch (err) {
+      setAssignment(null);
+      setExistingReviews([]);
+    }
+  };
 
   const loadProject = async (silent = false) => {
     try {
@@ -62,6 +96,10 @@ export const ProjectDetailPage = () => {
       const proposalsData = response?.content || response || [];
       setProposals(Array.isArray(proposalsData) ? proposalsData : []);
     } catch (err) {
+      if (err.response?.status === 403) {
+        setProposals([]);
+        return;
+      }
       toast.error('Error loading proposals');
       setProposals([]);
     }
@@ -170,6 +208,21 @@ export const ProjectDetailPage = () => {
     }
   };
 
+  const handleCompleteProject = async () => {
+    try {
+      setIsLoadingAction(true);
+      await projectApi.update(Number(id), { status: 'COMPLETED' });
+      toast.success('Project completed');
+      setIsCompleteProjectModalOpen(false);
+      loadProject();
+    } catch (err) {
+      const errorMessage = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || 'Error completing project';
+      toast.error(errorMessage);
+    } finally {
+      setIsLoadingAction(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <>
@@ -237,6 +290,24 @@ export const ProjectDetailPage = () => {
                             Delete
                           </Button>
                         )}
+                        {project.status === 'IN_PROGRESS' && (
+                          <Button
+                            variant="secondary"
+                            onClick={() => setIsEditModalOpen(true)}
+                            className="flex-shrink-0"
+                          >
+                            Edit
+                          </Button>
+                        )}
+                        {project.status === 'IN_PROGRESS' && (
+                          <Button
+                            onClick={() => setIsCompleteProjectModalOpen(true)}
+                            isLoading={isLoadingAction}
+                            className="flex-shrink-0"
+                          >
+                            Complete Project
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
@@ -275,6 +346,39 @@ export const ProjectDetailPage = () => {
                         <p className="text-lg font-semibold text-text-main">{project.status}</p>
                       </div>
                     </div>
+                    {(project.deadline || (project.tagNames && project.tagNames.length > 0)) && (
+                      <div className="pt-4 border-t border-border-subtle">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                          {project.deadline && (
+                            <div>
+                              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">
+                                Deadline
+                              </h3>
+                              <p className="text-sm text-text-main font-medium">
+                                {formatDate(project.deadline)}
+                              </p>
+                            </div>
+                          )}
+                          {project.tagNames && project.tagNames.length > 0 && (
+                            <div>
+                              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">
+                                Tags
+                              </h3>
+                              <div className="flex flex-wrap gap-2">
+                                {project.tagNames.map((tag) => (
+                                  <span
+                                    key={tag}
+                                    className="inline-flex items-center px-3 py-1.5 bg-primary-subtle text-primary rounded-full text-sm font-medium border border-primary/20"
+                                  >
+                                    {tag}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                     {project.createdAt && (
                       <div className="pt-4 border-t border-border-subtle">
                         <p className="text-sm text-text-soft font-medium">
@@ -305,7 +409,7 @@ export const ProjectDetailPage = () => {
               )}
 
               {user?.role === ROLES.CLIENT && proposals.length > 0 && (
-                <Card>
+                <Card className="mb-6">
                   <CardHeader>
                     <CardTitle>Proposals</CardTitle>
                   </CardHeader>
@@ -316,6 +420,55 @@ export const ProjectDetailPage = () => {
                       onReject={handleRejectProposal}
                       isLoading={isLoadingAction}
                     />
+                  </CardContent>
+                </Card>
+              )}
+
+              {assignment && assignment.status === 'COMPLETED' && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Review</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    {existingReviews.length > 0 ? (
+                      <div className="space-y-3">
+                        <p className="text-sm text-text-muted">Reviews for this assignment:</p>
+                        {existingReviews.map((review) => (
+                          <div key={review.id} className="p-3 rounded-lg bg-bg-elevated border border-border-subtle">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-text-main">
+                                {review.reviewType === 'CLIENT_TO_FREELANCER' ? 'Client Review' : 'Freelancer Review'}
+                              </span>
+                              <div className="flex items-center gap-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <span
+                                    key={i}
+                                    className={`text-sm ${i < review.rating ? 'text-warning' : 'text-text-soft'}`}
+                                  >
+                                    ★
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                            {review.comment && (
+                              <p className="text-sm text-text-muted mt-2">{review.comment}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-sm text-text-muted mb-3">
+                          No reviews yet. Be the first to leave a review!
+                        </p>
+                        <Button
+                          className="w-full"
+                          onClick={() => setIsReviewModalOpen(true)}
+                        >
+                          Create Review
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               )}
@@ -332,6 +485,7 @@ export const ProjectDetailPage = () => {
       >
         <CreateProposalForm
           projectId={Number(id)}
+          project={project}
           onSuccess={() => {
             setIsProposalModalOpen(false);
             if (user?.role === ROLES.CLIENT) {
@@ -382,6 +536,50 @@ export const ProjectDetailPage = () => {
         <p className="text-text-muted">
           Are you sure you want to delete this project? This action cannot be undone.
         </p>
+      </Modal>
+
+      <Modal
+        isOpen={isCompleteProjectModalOpen}
+        onClose={() => setIsCompleteProjectModalOpen(false)}
+        title="Complete Project"
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => setIsCompleteProjectModalOpen(false)}
+              disabled={isLoadingAction}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleCompleteProject}
+              isLoading={isLoadingAction}
+            >
+              Complete
+            </Button>
+          </>
+        }
+      >
+        <p className="text-text-muted">
+          Are you sure you want to mark this project as completed? This action will finalize the project.
+        </p>
+      </Modal>
+
+      <Modal
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        title="Create Review"
+        size="md"
+      >
+        {assignment && (
+          <CreateReviewForm
+            assignmentId={assignment.id}
+            onSuccess={() => {
+              setIsReviewModalOpen(false);
+              loadAssignment();
+            }}
+          />
+        )}
       </Modal>
     </>
   );

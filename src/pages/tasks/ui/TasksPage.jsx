@@ -20,8 +20,10 @@ export const TasksPage = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isLoadingAction, setIsLoadingAction] = useState(false);
+  const [taskAttachments, setTaskAttachments] = useState({});
 
   useEffect(() => {
     if (assignmentId) {
@@ -36,11 +38,50 @@ export const TasksPage = () => {
       const response = await taskApi.getByAssignment(Number(assignmentId), params);
       const tasksData = response?.content || response || [];
       setTasks(Array.isArray(tasksData) ? tasksData : []);
+      
+      // Load attachments for each task
+      for (const task of Array.isArray(tasksData) ? tasksData : []) {
+        if (task.id) {
+          loadTaskAttachments(task.id);
+        }
+      }
     } catch (err) {
       toast.error('Error loading tasks');
       setTasks([]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadTaskAttachments = async (taskId) => {
+    try {
+      const response = await taskApi.getAttachments(taskId);
+      const attachments = response?.data || response || [];
+      setTaskAttachments(prev => ({
+        ...prev,
+        [taskId]: Array.isArray(attachments) ? attachments : []
+      }));
+    } catch (err) {
+      setTaskAttachments(prev => ({
+        ...prev,
+        [taskId]: []
+      }));
+    }
+  };
+
+  const handleUploadFile = async (taskId, file) => {
+    try {
+      setIsLoadingAction(true);
+      await taskApi.uploadAttachment(taskId, file);
+      toast.success('File uploaded successfully');
+      setIsUploadModalOpen(false);
+      setSelectedTask(null);
+      loadTaskAttachments(taskId);
+    } catch (err) {
+      const errorMessage = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || 'Error uploading file';
+      toast.error(errorMessage);
+    } finally {
+      setIsLoadingAction(false);
     }
   };
 
@@ -156,13 +197,25 @@ export const TasksPage = () => {
                         </div>
                       )}
                     </div>
-                    {task.attachments && task.attachments.length > 0 && (
-                      <div className="mb-4 p-3 rounded-lg bg-bg-elevated border border-border-subtle">
-                        <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-2">
+                    <div className="mb-4 p-3 rounded-lg bg-bg-elevated border border-border-subtle">
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-xs font-semibold text-text-muted uppercase tracking-wide">
                           Attachments
                         </p>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedTask(task);
+                            setIsUploadModalOpen(true);
+                          }}
+                        >
+                          Upload File
+                        </Button>
+                      </div>
+                      {(taskAttachments[task.id]?.length > 0 || task.attachments?.length > 0) ? (
                         <div className="space-y-2">
-                          {task.attachments.map((attachment) => (
+                          {(taskAttachments[task.id] || task.attachments || []).map((attachment) => (
                             <button
                               key={attachment.id}
                               onClick={() => handleDownloadAttachment(attachment.id, attachment.fileName)}
@@ -175,8 +228,10 @@ export const TasksPage = () => {
                             </button>
                           ))}
                         </div>
-                      </div>
-                    )}
+                      ) : (
+                        <p className="text-xs text-text-soft">No attachments yet</p>
+                      )}
+                    </div>
                     <div className="flex flex-wrap gap-2 pt-4 border-t border-border-subtle">
                       <Button
                         variant="secondary"
@@ -276,7 +331,71 @@ export const TasksPage = () => {
           Are you sure you want to delete this task? This action cannot be undone.
         </p>
       </Modal>
+
+      <Modal
+        isOpen={isUploadModalOpen}
+        onClose={() => {
+          setIsUploadModalOpen(false);
+          setSelectedTask(null);
+        }}
+        title="Upload File"
+        footer={
+          <>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setIsUploadModalOpen(false);
+                setSelectedTask(null);
+              }}
+              disabled={isLoadingAction}
+            >
+              Cancel
+            </Button>
+          </>
+        }
+      >
+        {selectedTask && (
+          <UploadFileForm
+            taskId={selectedTask.id}
+            onUpload={(file) => handleUploadFile(selectedTask.id, file)}
+            isLoading={isLoadingAction}
+          />
+        )}
+      </Modal>
     </>
+  );
+};
+
+const UploadFileForm = ({ taskId, onUpload, isLoading }) => {
+  const [file, setFile] = useState(null);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (file) {
+      onUpload(file);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-text-muted mb-2">
+          Select File
+        </label>
+        <input
+          type="file"
+          onChange={(e) => setFile(e.target.files[0])}
+          className="w-full px-4 py-2 text-sm bg-bg-card border border-border-subtle rounded-lg text-text-main focus:outline-none focus:ring-2 focus:ring-primary"
+          required
+        />
+        <p className="mt-1 text-xs text-text-soft">
+          Supported formats: PDF, DOC, DOCX, JPG, PNG, GIF, ZIP, RAR (max 10MB)
+        </p>
+      </div>
+      <Button type="submit" className="w-full" isLoading={isLoading} disabled={!file}>
+        Upload
+      </Button>
+    </form>
   );
 };
 

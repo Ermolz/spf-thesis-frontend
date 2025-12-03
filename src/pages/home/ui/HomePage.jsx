@@ -45,7 +45,7 @@ export const HomePage = () => {
                       <Button className="w-full">Sign In</Button>
                     </Link>
                     <Link to="/auth/register" className="flex-1">
-                      <Button variant="outline" className="w-full">
+                      <Button className="w-full">
                         Sign Up
                       </Button>
                     </Link>

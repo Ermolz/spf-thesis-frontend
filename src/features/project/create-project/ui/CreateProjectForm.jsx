@@ -14,8 +14,26 @@ import { toast } from '@shared/lib/toast';
 const createProjectSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   description: z.string().min(1, 'Description is required'),
-  budgetMin: z.number().min(0.01, 'Minimum budget must be greater than 0'),
-  budgetMax: z.number().min(0.01, 'Maximum budget must be greater than 0'),
+      budgetMin: z.preprocess(
+        (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
+        z.number({ required_error: 'Minimum budget is required', invalid_type_error: 'Minimum budget must be a number' })
+          .min(0.01, 'Minimum budget must be greater than 0')
+          .max(9999999999.99, 'Minimum budget must not exceed 9999999999.99')
+          .refine((val) => {
+            const decimalPlaces = (val.toString().split('.')[1] || '').length;
+            return decimalPlaces <= 2;
+          }, 'Minimum budget must have at most 2 decimal places')
+      ),
+      budgetMax: z.preprocess(
+        (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
+        z.number({ required_error: 'Maximum budget is required', invalid_type_error: 'Maximum budget must be a number' })
+          .min(0.01, 'Maximum budget must be greater than 0')
+          .max(9999999999.99, 'Maximum budget must not exceed 9999999999.99')
+          .refine((val) => {
+            const decimalPlaces = (val.toString().split('.')[1] || '').length;
+            return decimalPlaces <= 2;
+          }, 'Maximum budget must have at most 2 decimal places')
+      ),
   currency: z.string().length(3, 'Currency must contain 3 characters'),
   categoryId: z.number().optional(),
   tagNames: z.array(z.string()).optional(),
@@ -77,20 +95,23 @@ export const CreateProjectForm = () => {
     loadCategories();
   }, []);
 
-  const categoryOptions = categories.map((cat) => ({
-    value: cat.id,
-    label: cat.name || cat.categoryName || `Category ${cat.id}`,
-  }));
+  const categoryOptions = [
+    { value: null, label: 'None' },
+    ...categories.map((cat) => ({
+      value: cat.id,
+      label: cat.name || cat.categoryName || `Category ${cat.id}`,
+    })),
+  ];
 
   const onSubmit = async (data) => {
     try {
       setIsLoading(true);
       const payload = {
-        title: data.title,
-        description: data.description,
+        title: data.title.trim(),
+        description: data.description.trim(),
         budgetMin: data.budgetMin,
         budgetMax: data.budgetMax,
-        currency: data.currency.toUpperCase(),
+        currency: data.currency.toUpperCase().trim(),
         ...(data.categoryId && { categoryId: data.categoryId }),
         ...(tags.length > 0 && { tagNames: tags }),
         ...(data.deadline && {
@@ -112,6 +133,7 @@ export const CreateProjectForm = () => {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <Input
         label="Project Title"
+        maxLength={255}
         {...register('title')}
         error={errors.title?.message}
       />
@@ -157,7 +179,7 @@ export const CreateProjectForm = () => {
           <Select
             label="Category (optional)"
             value={field.value}
-            onChange={(value) => field.onChange(value ? Number(value) : undefined)}
+            onChange={(value) => field.onChange(value === null ? undefined : (value ? Number(value) : undefined))}
             options={categoryOptions}
             placeholder={isLoadingCategories ? 'Loading categories...' : 'Select category'}
             error={errors.categoryId?.message}
@@ -213,6 +235,7 @@ export const CreateProjectForm = () => {
             value={field.value}
             onChange={field.onChange}
             error={errors.deadline?.message}
+            min={new Date().toISOString().split('T')[0]}
           />
         )}
       />

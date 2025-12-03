@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@shared/ui/Button';
 import { Input } from '@shared/ui/Input';
+import { Select } from '@shared/ui/Select';
 import { profileApi } from '@entities/user/api/userApi';
+import { skillApi } from '@entities/skill/api/skillApi';
 import { toast } from '@shared/lib/toast';
 
 const updateFreelancerProfileSchema = z.object({
@@ -16,8 +18,13 @@ const updateFreelancerProfileSchema = z.object({
 
 export const UpdateFreelancerProfileForm = ({ profile, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
-  const [skills, setSkills] = useState(profile?.skills || []);
-  const [skillInput, setSkillInput] = useState('');
+  const [availableSkills, setAvailableSkills] = useState([]);
+  const [selectedSkillIds, setSelectedSkillIds] = useState(
+    profile?.skills?.map((skillName) => {
+      return null;
+    }).filter(Boolean) || []
+  );
+  const [isLoadingSkills, setIsLoadingSkills] = useState(true);
 
   const {
     register,
@@ -34,15 +41,38 @@ export const UpdateFreelancerProfileForm = ({ profile, onSuccess }) => {
     },
   });
 
-  const addSkill = () => {
-    if (skillInput.trim() && !skills.includes(skillInput.trim())) {
-      setSkills([...skills, skillInput.trim()]);
-      setSkillInput('');
+  useEffect(() => {
+    const loadSkills = async () => {
+      try {
+        setIsLoadingSkills(true);
+        const response = await skillApi.getAll();
+        const skillsData = response?.data || response || [];
+        setAvailableSkills(Array.isArray(skillsData) ? skillsData : []);
+        
+        if (profile?.skills && Array.isArray(profile.skills)) {
+          const skillIds = skillsData
+            .filter(skill => profile.skills.includes(skill.name))
+            .map(skill => skill.id);
+          setSelectedSkillIds(skillIds);
+        }
+      } catch (err) {
+        console.error('Error loading skills:', err);
+        toast.error('Error loading skills');
+      } finally {
+        setIsLoadingSkills(false);
+      }
+    };
+    loadSkills();
+  }, [profile]);
+
+  const handleSkillChange = (skillId) => {
+    if (skillId && !selectedSkillIds.includes(skillId)) {
+      setSelectedSkillIds([...selectedSkillIds, skillId]);
     }
   };
 
-  const removeSkill = (skill) => {
-    setSkills(skills.filter((s) => s !== skill));
+  const removeSkill = (skillId) => {
+    setSelectedSkillIds(selectedSkillIds.filter((id) => id !== skillId));
   };
 
   const onSubmit = async (data) => {
@@ -53,7 +83,7 @@ export const UpdateFreelancerProfileForm = ({ profile, onSuccess }) => {
         ...(data.bio && { bio: data.bio }),
         ...(data.hourlyRate && data.hourlyRate > 0 && { hourlyRate: data.hourlyRate }),
         ...(data.currency && { currency: data.currency }),
-        ...(skills.length > 0 && { skills }),
+        ...(selectedSkillIds.length > 0 && { skillIds: selectedSkillIds }),
       };
       await profileApi.updateFreelancerProfile(payload);
       toast.success('Profile updated successfully!');
@@ -92,40 +122,42 @@ export const UpdateFreelancerProfileForm = ({ profile, onSuccess }) => {
         <label className="block text-sm sm:text-base font-medium text-text-muted mb-1">
           Skills
         </label>
-        <div className="flex gap-2 mb-2">
-          <Input
-            placeholder="Add skill"
-            value={skillInput}
-            onChange={(e) => setSkillInput(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                addSkill();
-              }
-            }}
-          />
-          <Button type="button" onClick={addSkill} variant="secondary">
-            Add
-          </Button>
-        </div>
-        {skills.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {skills.map((skill) => (
-              <span
-                key={skill}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-subtle text-primary rounded-full text-sm font-medium border border-primary/20 hover:bg-primary/10 transition-colors duration-200"
-              >
-                {skill}
-                <button
-                  type="button"
-                  onClick={() => removeSkill(skill)}
-                  className="text-primary hover:text-primary-soft transition-colors duration-200 ml-1"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
+        {isLoadingSkills ? (
+          <p className="text-sm text-text-soft">Loading skills...</p>
+        ) : (
+          <>
+            <Select
+              placeholder="Select a skill"
+              options={availableSkills
+                .filter(skill => !selectedSkillIds.includes(skill.id))
+                .map(skill => ({ value: skill.id, label: skill.name }))}
+              onChange={(value) => handleSkillChange(value)}
+              value=""
+            />
+            {selectedSkillIds.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {selectedSkillIds.map((skillId) => {
+                  const skill = availableSkills.find(s => s.id === skillId);
+                  if (!skill) return null;
+                  return (
+                    <span
+                      key={skillId}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary-subtle text-primary rounded-full text-sm font-medium border border-primary/20 hover:bg-primary/10 transition-colors duration-200"
+                    >
+                      {skill.name}
+                      <button
+                        type="button"
+                        onClick={() => removeSkill(skillId)}
+                        className="text-primary hover:text-primary-soft transition-colors duration-200 ml-1"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+          </>
         )}
       </div>
       <div className="grid grid-cols-2 gap-4">

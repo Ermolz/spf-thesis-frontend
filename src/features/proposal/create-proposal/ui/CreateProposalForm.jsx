@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -9,12 +9,42 @@ import { toast } from '@shared/lib/toast';
 
 const createProposalSchema = z.object({
   coverLetter: z.string().min(1, 'Cover letter is required'),
-  bidAmount: z.number().min(0.01, 'Bid amount must be greater than 0'),
+  bidAmount: z.number({ invalid_type_error: 'Bid amount is required' })
+    .min(0.01, 'Bid amount must be greater than 0')
+    .max(9999999999.99, 'Bid amount must not exceed 9999999999.99')
+    .refine((val) => /^\d+(\.\d{1,2})?$/.test(val.toString()), {
+      message: 'Bid amount can have at most two decimal places',
+    }),
   estimatedDuration: z.number().int().positive().optional(),
 });
 
-export const CreateProposalForm = ({ projectId, onSuccess }) => {
+export const CreateProposalForm = ({ projectId, project, onSuccess }) => {
   const [isLoading, setIsLoading] = useState(false);
+  const [projectStatus, setProjectStatus] = useState(null);
+
+  useEffect(() => {
+    // Load project if not provided
+    if (project) {
+      setProjectStatus(project.status);
+    } else if (projectId) {
+      const loadProject = async () => {
+        try {
+          const data = await projectApi.getById(Number(projectId));
+          setProjectStatus(data?.status || data?.data?.status);
+        } catch (err) {
+          console.error('Error loading project:', err);
+        }
+      };
+      loadProject();
+    }
+  }, [projectId, project]);
+
+  useEffect(() => {
+    // Show warning if project is not OPEN
+    if (projectStatus && projectStatus !== 'OPEN') {
+      toast.error('This project is not open for proposals');
+    }
+  }, [projectStatus]);
 
   const {
     register,
@@ -45,6 +75,16 @@ export const CreateProposalForm = ({ projectId, onSuccess }) => {
       setIsLoading(false);
     }
   };
+
+  if (projectStatus && projectStatus !== 'OPEN') {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-800 text-sm">
+          This project is not open for proposals. Current status: {projectStatus}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">

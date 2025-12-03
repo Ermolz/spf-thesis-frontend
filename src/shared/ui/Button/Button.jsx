@@ -16,7 +16,7 @@ export const Button = ({
     primary: 'bg-primary text-text-on-primary hover:bg-primary-soft focus:ring-primary shadow-lg shadow-primary/20',
     secondary: 'bg-primary-subtle text-text-main hover:bg-primary-soft focus:ring-primary border border-primary/20',
     outline: 'border-2 border-primary text-primary hover:bg-primary-subtle focus:ring-primary bg-transparent',
-    ghost: 'text-text-muted hover:bg-bg-card focus:ring-primary',
+    ghost: 'text-text-muted hover:bg-bg-card focus:ring-primary border border-border-subtle',
     danger: 'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 shadow-lg shadow-red-600/20',
   };
 

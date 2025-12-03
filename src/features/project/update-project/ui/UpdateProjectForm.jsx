@@ -13,8 +13,30 @@ import { toast } from '@shared/lib/toast';
 const updateProjectSchema = z.object({
   title: z.string().min(1, 'Title is required').optional(),
   description: z.string().min(1, 'Description is required').optional(),
-  budgetMin: z.number().min(0.01, 'Minimum budget must be greater than 0').optional(),
-  budgetMax: z.number().min(0.01, 'Maximum budget must be greater than 0').optional(),
+  budgetMin: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
+    z.number({ invalid_type_error: 'Minimum budget must be a number' })
+      .min(0.01, 'Minimum budget must be greater than 0')
+      .max(9999999999.99, 'Minimum budget must not exceed 9999999999.99')
+      .refine((val) => {
+        if (val === undefined) return true;
+        const decimalPlaces = (val.toString().split('.')[1] || '').length;
+        return decimalPlaces <= 2;
+      }, 'Minimum budget must have at most 2 decimal places')
+      .optional()
+  ),
+  budgetMax: z.preprocess(
+    (val) => (val === '' || val === null || val === undefined ? undefined : Number(val)),
+    z.number({ invalid_type_error: 'Maximum budget must be a number' })
+      .min(0.01, 'Maximum budget must be greater than 0')
+      .max(9999999999.99, 'Maximum budget must not exceed 9999999999.99')
+      .refine((val) => {
+        if (val === undefined) return true;
+        const decimalPlaces = (val.toString().split('.')[1] || '').length;
+        return decimalPlaces <= 2;
+      }, 'Maximum budget must have at most 2 decimal places')
+      .optional()
+  ),
   currency: z.string().length(3, 'Currency must contain 3 characters').optional(),
   categoryId: z.number().optional(),
   tagNames: z.array(z.string()).optional(),
@@ -82,10 +104,13 @@ export const UpdateProjectForm = ({ project, onSuccess }) => {
     }
   }, [project, reset]);
 
-  const categoryOptions = categories.map((cat) => ({
-    value: cat.id,
-    label: cat.name || cat.categoryName || `Category ${cat.id}`,
-  }));
+  const categoryOptions = [
+    { value: null, label: 'None' },
+    ...categories.map((cat) => ({
+      value: cat.id,
+      label: cat.name || cat.categoryName || `Category ${cat.id}`,
+    })),
+  ];
 
   const addTag = () => {
     if (tagInput.trim() && !tags.includes(tagInput.trim())) {
@@ -106,11 +131,11 @@ export const UpdateProjectForm = ({ project, onSuccess }) => {
     try {
       setIsLoading(true);
       const payload = {};
-      if (data.title) payload.title = data.title;
-      if (data.description) payload.description = data.description;
+      if (data.title) payload.title = data.title.trim();
+      if (data.description) payload.description = data.description.trim();
       if (data.budgetMin) payload.budgetMin = data.budgetMin;
       if (data.budgetMax) payload.budgetMax = data.budgetMax;
-      if (data.currency) payload.currency = data.currency.toUpperCase();
+      if (data.currency) payload.currency = data.currency.toUpperCase().trim();
       if (data.categoryId) payload.categoryId = data.categoryId;
       if (tags.length > 0) payload.tagNames = tags;
       if (data.deadline) {
@@ -131,6 +156,7 @@ export const UpdateProjectForm = ({ project, onSuccess }) => {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <Input
         label="Project Title"
+        maxLength={255}
         {...register('title')}
         error={errors.title?.message}
       />
@@ -176,7 +202,7 @@ export const UpdateProjectForm = ({ project, onSuccess }) => {
           <Select
             label="Category (optional)"
             value={field.value}
-            onChange={(value) => field.onChange(value ? Number(value) : undefined)}
+            onChange={(value) => field.onChange(value === null ? undefined : (value ? Number(value) : undefined))}
             options={categoryOptions}
             placeholder={isLoadingCategories ? 'Loading categories...' : 'Select category'}
             error={errors.categoryId?.message}
@@ -232,6 +258,7 @@ export const UpdateProjectForm = ({ project, onSuccess }) => {
             value={field.value}
             onChange={field.onChange}
             error={errors.deadline?.message}
+            min={new Date().toISOString().split('T')[0]}
           />
         )}
       />

@@ -47,6 +47,17 @@ export const profileApi = {
     const response = await apiClient.get('/profiles/freelancers/search', { params });
     return response;
   },
+
+  uploadPortfolio: async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await apiClient.post('/profiles/freelancer/portfolio', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response;
+  },
 };
 
 export const clientApi = {

@@ -31,8 +31,8 @@ export const UpdateClientProfileForm = ({ profile, onSuccess }) => {
     try {
       setIsLoading(true);
       const payload = {
-        ...(data.companyName && { companyName: data.companyName }),
-        ...(data.bio && { bio: data.bio }),
+        ...(data.companyName && { companyName: data.companyName.trim() }),
+        ...(data.bio && { bio: data.bio.trim() }),
       };
       await profileApi.updateClientProfile(payload);
       toast.success('Profile updated successfully!');

@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardContent } from '@shared/ui/Card';
 import { formatCurrency, formatDate } from '@shared/lib/utils';
 import { Button } from '@shared/ui/Button';
@@ -28,7 +29,7 @@ export const ProposalList = ({ proposals, onAccept, onReject, isLoading }) => {
 
   return (
     <div className="space-y-4">
-      {proposals.map((proposal) => {
+      {proposals.map((proposal, index) => {
         const isPending = proposal.status === 'PENDING';
         return (
           <Card key={proposal.id} className="group">
@@ -36,7 +37,7 @@ export const ProposalList = ({ proposals, onAccept, onReject, isLoading }) => {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                 <div className="flex items-center gap-3">
                   <CardTitle className="text-lg sm:text-xl group-hover:text-primary transition-colors duration-200">
-                    Proposal #{proposal.id}
+                    Proposal #{index + 1}
                   </CardTitle>
                   {proposal.status && (
                     <span className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap ${getStatusColor(proposal.status)}`}>
@@ -58,9 +59,18 @@ export const ProposalList = ({ proposals, onAccept, onReject, isLoading }) => {
                   <p className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1">
                     From
                   </p>
-                  <p className="text-sm font-medium text-text-main">
-                    {proposal.freelancerDisplayName}
-                  </p>
+                  {proposal.freelancerUserId ? (
+                    <Link
+                      to={`/freelancers/${proposal.freelancerUserId}`}
+                      className="text-sm font-medium text-primary hover:text-primary-soft transition-colors"
+                    >
+                      {proposal.freelancerDisplayName}
+                    </Link>
+                  ) : (
+                    <p className="text-sm font-medium text-text-main">
+                      {proposal.freelancerDisplayName}
+                    </p>
+                  )}
                 </div>
               )}
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-4 border-t border-border-subtle">

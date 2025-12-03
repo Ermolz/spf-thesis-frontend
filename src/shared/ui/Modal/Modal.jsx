@@ -30,10 +30,16 @@ export const Modal = ({
     xl: 'sm:max-w-4xl',
   };
 
+  const handleBackdropMouseDown = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50 p-4 overflow-y-auto"
-      onClick={onClose}
+      onMouseDown={handleBackdropMouseDown}
     >
       <div
         className={cn(
@@ -42,7 +48,7 @@ export const Modal = ({
           sizeClasses[size],
           'max-h-[90vh] overflow-y-auto'
         )}
-        onClick={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
       >
         {title && (
           <div className="flex items-center justify-between p-4 sm:p-6 border-b border-border-subtle sticky top-0 bg-bg-card z-10">
