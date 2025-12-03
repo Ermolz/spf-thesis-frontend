@@ -99,6 +99,27 @@ export const FreelancerProfilePage = () => {
                       </div>
                     )}
 
+                    {profile.portfolioFilePath && (
+                      <div className="pt-6 border-t border-border-subtle">
+                        <h3 className="text-sm font-semibold text-text-muted uppercase tracking-wide mb-3">
+                          Portfolio
+                        </h3>
+                        <div className="p-4 rounded-xl bg-bg-elevated border border-border-subtle">
+                          <a
+                            href={`${import.meta.env.VITE_API_URL || 'http://localhost:8080'}/api/files/portfolios/${profile.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 text-primary hover:text-primary-soft transition-colors font-medium"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            View Portfolio PDF
+                          </a>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-6 border-t border-border-subtle">
                       {profile.hourlyRate && (
                         <div className="p-4 rounded-xl bg-primary-subtle/30 border border-primary/10">

@@ -2,6 +2,24 @@ import { apiClient } from '@shared/api/client';
 
 export const moderatorApi = {
   /**
+   * Get all tasks for moderators
+   * @param {Object} params - Query parameters (page, size, sort)
+   */
+  getAllTasks: async (params = {}) => {
+    const response = await apiClient.get('/moderator/tasks', { params });
+    return response;
+  },
+
+  /**
+   * Get all users for moderators
+   * @param {Object} params - Query parameters (page, size, sort)
+   */
+  getAllUsers: async (params = {}) => {
+    const response = await apiClient.get('/moderator/users', { params });
+    return response;
+  },
+
+  /**
    * Block a task
    * @param {number} taskId - Task ID
    */

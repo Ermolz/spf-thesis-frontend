@@ -40,8 +40,10 @@ export const ProjectDetailPage = () => {
   }, [id, user]);
 
   useEffect(() => {
-
-    if (user?.role === ROLES.CLIENT && project) {
+    const isProjectOwner = user?.role === ROLES.CLIENT && 
+      project?.clientEmail === user.email;
+    
+    if (isProjectOwner && project) {
       loadProposals();
     }
     
@@ -234,6 +236,9 @@ export const ProjectDetailPage = () => {
 
   if (!project) return null;
 
+  const isProjectOwner = user?.role === ROLES.CLIENT && 
+    project.clientEmail === user.email;
+
   return (
     <>
       <Header />
@@ -260,7 +265,7 @@ export const ProjectDetailPage = () => {
                     <CardTitle className="text-2xl sm:text-3xl leading-tight">
                       {project.title}
                     </CardTitle>
-                    {user?.role === ROLES.CLIENT && (
+                    {isProjectOwner && (
                       <div className="flex flex-wrap gap-2">
                         {project.status === 'DRAFT' && (
                           <Button
@@ -408,7 +413,7 @@ export const ProjectDetailPage = () => {
                 </Card>
               )}
 
-              {user?.role === ROLES.CLIENT && proposals.length > 0 && (
+              {isProjectOwner && proposals.length > 0 && (
                 <Card className="mb-6">
                   <CardHeader>
                     <CardTitle>Proposals</CardTitle>

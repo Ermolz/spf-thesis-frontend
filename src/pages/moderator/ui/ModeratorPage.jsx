@@ -6,7 +6,6 @@ import { Loading } from '@shared/ui/Loading';
 import { Modal } from '@shared/ui/Modal';
 import { Input } from '@shared/ui/Input';
 import { moderatorApi } from '@entities/moderator/api/moderatorApi';
-import { taskApi } from '@entities/task/api/taskApi';
 import { toast } from '@shared/lib/toast';
 import { formatDate } from '@shared/lib/utils';
 
@@ -19,7 +18,6 @@ export const ModeratorPage = () => {
   const [isBlockModalOpen, setIsBlockModalOpen] = useState(false);
   const [isUnblockModalOpen, setIsUnblockModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
-  const [actionType, setActionType] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
@@ -30,12 +28,22 @@ export const ModeratorPage = () => {
     try {
       setIsLoading(true);
       if (activeTab === 'tasks') {
+        const response = await moderatorApi.getAllTasks({ page: 0, size: 100 });
+        const tasksData = response?.content || response || [];
+        setTasks(Array.isArray(tasksData) ? tasksData : []);
+      } else {
+        const response = await moderatorApi.getAllUsers({ page: 0, size: 100 });
+        const usersData = response?.content || response || [];
+        setUsers(Array.isArray(usersData) ? usersData : []);
+      }
+    } catch (err) {
+      const errorMessage = err.response?.data?.errors?.[0]?.message || err.response?.data?.message || 'Error loading data';
+      toast.error(errorMessage);
+      if (activeTab === 'tasks') {
         setTasks([]);
       } else {
         setUsers([]);
       }
-    } catch (err) {
-      toast.error('Error loading data');
     } finally {
       setIsLoading(false);
     }
