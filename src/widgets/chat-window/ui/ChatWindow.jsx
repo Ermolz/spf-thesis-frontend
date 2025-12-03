@@ -43,7 +43,7 @@ export const ChatWindow = ({ conversationId, messages = [], onSendMessage, isLoa
                       : 'bg-bg-elevated text-text-main'
                   }`}
                 >
-                  <p className="text-sm sm:text-base break-words">{msg.content}</p>
+                  <p className="text-sm sm:text-base break-words">{msg.text}</p>
                   <p
                     className={`text-xs mt-1 ${
                       isOwn ? 'text-text-on-primary opacity-80' : 'text-text-soft'
