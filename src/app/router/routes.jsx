@@ -14,6 +14,7 @@ import { ProfilePage } from '@pages/profile/ui/ProfilePage';
 import { PaymentsPage } from '@pages/payments/ui/PaymentsPage';
 import { ReviewsPage } from '@pages/reviews/ui/ReviewsPage';
 import { FreelancerProfilePage } from '@pages/freelancers/detail/ui/FreelancerProfilePage';
+import { ModeratorPage } from '@pages/moderator/ui/ModeratorPage';
 import { ROLES } from '@shared/config/constants';
 
 export const AppRoutes = () => {
@@ -107,6 +108,14 @@ export const AppRoutes = () => {
         element={
           <PrivateRoute>
             <FreelancerProfilePage />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/moderator"
+        element={
+          <PrivateRoute role={ROLES.MODERATOR}>
+            <ModeratorPage />
           </PrivateRoute>
         }
       />

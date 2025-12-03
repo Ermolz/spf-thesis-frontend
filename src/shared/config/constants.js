@@ -4,6 +4,7 @@ export const ROLES = {
   FREELANCER: 'FREELANCER',
   CLIENT: 'CLIENT',
   ADMIN: 'ADMIN',
+  MODERATOR: 'MODERATOR',
 };
 
 export const PROJECT_STATUS = {

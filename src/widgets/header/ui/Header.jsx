@@ -68,6 +68,14 @@ export const Header = () => {
                 >
                   Profile
                 </Link>
+                {user?.role === ROLES.MODERATOR && (
+                  <Link
+                    to="/moderator"
+                    className="text-text-muted hover:text-primary transition-colors text-sm font-medium"
+                  >
+                    Moderator
+                  </Link>
+                )}
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-text-muted">
                     {user?.email}
@@ -182,6 +190,15 @@ export const Header = () => {
                   >
                     Profile
                   </Link>
+                  {user?.role === ROLES.MODERATOR && (
+                    <Link
+                      to="/moderator"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="text-text-muted hover:text-primary transition-colors text-sm font-medium py-2"
+                    >
+                      Moderator
+                    </Link>
+                  )}
                   <Button variant="ghost" size="sm" onClick={handleLogout} className="w-full justify-start">
                     Logout
                   </Button>
